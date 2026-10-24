@@ -168,8 +168,8 @@
     </main>
   </div>
   {% else %}
-    <!-- Public Layout (e.g. Login) -->
-    <div class="w-100 min-vh-100 d-flex flex-column justify-content-center align-items-center">
+    <!-- Public Layout (e.g. Login, Errors) -->
+    <div class="w-100 min-vh-100 d-flex flex-column justify-content-center align-items-center p-3">
       {% block auth_content %}{% endblock %}
     </div>
   {% endif %}
