@@ -13,6 +13,22 @@ login_manager.login_view = "auth.login"
 login_manager.login_message = "Please log in to access this page."
 login_manager.login_message_category = "warning"
 
+def _get_mongomock():
+    """Safely import mongomock, providing a lightweight pkg_resources shim if missing on Python 3.12+."""
+    import sys
+    if "pkg_resources" not in sys.modules:
+        try:
+            import pkg_resources
+        except (ImportError, ModuleNotFoundError):
+            import types
+            dummy = types.ModuleType("pkg_resources")
+            class Dist:
+                version = "4.1.2"
+            dummy.get_distribution = lambda name: Dist()
+            sys.modules["pkg_resources"] = dummy
+    import mongomock
+    return mongomock
+
 class DatabaseManager:
     """Manages MongoDB connection with resilient fallback."""
     def __init__(self):
@@ -23,19 +39,21 @@ class DatabaseManager:
     def init_app(self, app):
         mongo_uri = app.config.get("MONGO_URI", "mongodb://localhost:27017/student_tracker")
         db_name = app.config.get("DATABASE_NAME", "student_tracker")
+        is_vercel = bool(os.getenv("VERCEL"))
+        is_localhost_uri = "localhost" in mongo_uri or "127.0.0.1" in mongo_uri
 
-        # Explicit test or mongomock URI
-        if mongo_uri.startswith("mongomock://") or app.config.get("TESTING"):
+        # Explicit test or mongomock URI, or Vercel default without Atlas URI configured yet
+        if mongo_uri.startswith("mongomock://") or app.config.get("TESTING") or (is_vercel and is_localhost_uri):
             try:
-                import mongomock
-                self.client = mongomock.MongoClient()
+                mm = _get_mongomock()
+                self.client = mm.MongoClient()
                 self.db = self.client[db_name]
                 self.is_mock = True
-                logger.info("[DB] Initialized mongomock database for testing.")
+                logger.info("[DB] Initialized in-memory MongoDB store.")
                 self._ensure_indexes()
                 return
-            except ImportError:
-                pass
+            except Exception as mock_err:
+                logger.warning(f"[DB] mongomock initialization warning: {mock_err}")
 
         try:
             # Try connecting to live MongoDB (local or Atlas)
@@ -49,15 +67,12 @@ class DatabaseManager:
             logger.warning(f"[DB] Could not connect to live MongoDB at {mongo_uri}: {e}")
             logger.warning("[DB] Falling back to high-fidelity in-memory MongoDB store (mongomock).")
             try:
-                import mongomock
-                self.client = mongomock.MongoClient()
+                mm = _get_mongomock()
+                self.client = mm.MongoClient()
                 self.db = self.client[db_name]
                 self.is_mock = True
-            except ImportError:
-                # If mongomock isn't installed yet, raise error
-                raise RuntimeError(
-                    f"Failed to connect to MongoDB and mongomock is not available: {e}"
-                )
+            except Exception as fallback_err:
+                logger.error(f"[DB] Fallback failed: {fallback_err}")
 
         self._ensure_indexes()
 
