@@ -8,10 +8,7 @@
   ],
   "functions": {
     "api/index.py": {
-      "includeFiles": [
-        "app/**",
-        "config.py"
-      ]
+      "includeFiles": "{app/**,config.py}"
     }
   }
 }
