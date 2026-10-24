@@ -13,6 +13,3 @@ dependencies = [
     "email-validator>=2.2.0",
     "setuptools<70.0.0"
 ]
-
-[tool.vercel]
-entrypoint = "api/index.py"

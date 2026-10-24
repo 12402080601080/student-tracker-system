@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 from flask_login import LoginManager, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,7 +16,6 @@ login_manager.login_message_category = "warning"
 
 def _get_mongomock():
     """Safely import mongomock, providing a lightweight pkg_resources shim if missing on Python 3.12+."""
-    import sys
     if "pkg_resources" not in sys.modules:
         try:
             import pkg_resources
@@ -39,45 +39,53 @@ class DatabaseManager:
     def init_app(self, app):
         mongo_uri = app.config.get("MONGO_URI", "mongodb://localhost:27017/student_tracker")
         db_name = app.config.get("DATABASE_NAME", "student_tracker")
-        is_vercel = bool(os.getenv("VERCEL"))
+        
+        is_cloud = bool(
+            os.getenv("VERCEL") or 
+            os.getenv("AWS_LAMBDA_FUNCTION_NAME") or 
+            os.getenv("VERCEL_ENV")
+        )
         is_localhost_uri = "localhost" in mongo_uri or "127.0.0.1" in mongo_uri
 
-        # Explicit test or mongomock URI, or Vercel default without Atlas URI configured yet
-        if mongo_uri.startswith("mongomock://") or app.config.get("TESTING") or (is_vercel and is_localhost_uri):
+        # Explicit test or mongomock URI
+        if mongo_uri.startswith("mongomock://") or app.config.get("TESTING"):
             try:
                 mm = _get_mongomock()
                 self.client = mm.MongoClient()
                 self.db = self.client[db_name]
                 self.is_mock = True
-                logger.info("[DB] Initialized in-memory MongoDB store.")
                 self._ensure_indexes()
                 return
             except Exception as mock_err:
                 logger.warning(f"[DB] mongomock initialization warning: {mock_err}")
 
         try:
+            # In cloud environments without Atlas configured, localhost cannot exist; skip timeout
+            if is_cloud and is_localhost_uri:
+                raise ConnectionError("Localhost MongoDB is not reachable in serverless cloud.")
+
             # Try connecting to live MongoDB (local or Atlas)
-            self.client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=2000)
-            # Test connection
+            self.client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=1500)
             self.client.admin.command("ping")
             self.db = self.client[db_name]
             self.is_mock = False
             logger.info(f"[DB] Successfully connected to live MongoDB database '{db_name}'.")
         except Exception as e:
-            logger.warning(f"[DB] Could not connect to live MongoDB at {mongo_uri}: {e}")
-            logger.warning("[DB] Falling back to high-fidelity in-memory MongoDB store (mongomock).")
+            logger.warning(f"[DB] Live MongoDB not reachable ({e}). Initializing in-memory store.")
             try:
                 mm = _get_mongomock()
                 self.client = mm.MongoClient()
                 self.db = self.client[db_name]
                 self.is_mock = True
             except Exception as fallback_err:
-                logger.error(f"[DB] Fallback failed: {fallback_err}")
+                logger.error(f"[DB] Critical: mongomock fallback error: {fallback_err}")
 
         self._ensure_indexes()
 
     def _ensure_indexes(self):
         """Ensure unique and lookup indexes across collections."""
+        if self.db is None:
+            return
         try:
             # Users
             self.db.users.create_index("username", unique=True)
