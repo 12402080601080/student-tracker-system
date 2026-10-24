@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management - Student Tracker System{% endblock %}
+{% block header_title %}Attendance Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h5 class="fw-bold text-dark mb-1">Class Attendance Dashboard</h5>
+      <p class="text-muted small mb-0">Record, review, and track session attendance with 75% threshold alerts</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reports.export_attendance', subject=selected_subject) }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-arrow-down"></i> Export Report
+      </a>
+      <a href="{{ url_for('attendance.mark', subject=selected_subject, date=selected_date) }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+        <i class="bi bi-check2-square"></i> Mark Daily Attendance
+      </a>
+    </div>
+  </div>
+
+  <!-- Session Selector Form -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-3">
+      <form method="GET" action="{{ url_for('attendance.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <label class="form-label small fw-medium text-secondary mb-1">Select Subject</label>
+          <select name="subject" class="form-select" onchange="this.form.submit()">
+            {% for s in subjects %}
+            <option value="{{ s.code }}" {% if selected_subject == s.code %}selected{% endif %}>{{ s.code }} - {{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-medium text-secondary mb-1">Session Date</label>
+          <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-light border w-100">
+            <i class="bi bi-arrow-repeat me-1"></i> Refresh View
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Session Roster Table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h6 class="m-0 fw-bold text-dark">
+        <i class="bi bi-people-fill text-primary me-2"></i>Session Roster: {{ selected_subject }} on {{ selected_date }}
+      </h6>
+      <span class="badge bg-light text-muted border">{{ record_map | length }} of {{ students | length }} Marked</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Status</th>
+            <th>Notes / Edit Reason</th>
+            <th>Recorded By</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          {% set rec = record_map.get(st.student_id) %}
+          <tr>
+            <td class="fw-semibold text-primary">{{ st.student_id }}</td>
+            <td><span class="badge bg-light text-dark border">{{ st.roll_number }}</span></td>
+            <td>
+              <div class="fw-bold">{{ st.first_name }} {{ st.last_name }}</div>
+              <div class="small text-muted">{{ st.department }}</div>
+            </td>
+            <td>
+              {% if rec %}
+              <span class="badge {{ rec.status | status_badge }}">{{ rec.status }}</span>
+              {% else %}
+              <span class="badge bg-light text-muted border">Not Recorded</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if rec %}
+                <span class="small text-muted">{{ rec.edit_reason or rec.notes or '-' }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="small text-muted">
+              {{ rec.recorded_by if rec else '-' }}
+            </td>
+            <td class="text-end">
+              {% if rec %}
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openEditModal('{{ rec._id }}', '{{ st.first_name }} {{ st.last_name }}', '{{ rec.status }}')">
+                <i class="bi bi-pencil-square me-1"></i> Amend
+              </button>
+              {% else %}
+              <a href="{{ url_for('attendance.mark', subject=selected_subject, date=selected_date) }}" class="btn btn-sm btn-outline-primary">
+                Mark Now
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Low Attendance Alert Summary Table -->
+  <div class="card shadow-sm border-warning">
+    <div class="card-header bg-warning-subtle text-warning-emphasis d-flex justify-content-between align-items-center">
+      <h6 class="m-0 fw-bold"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Low Attendance Watchlist (< 75% Requirement)</h6>
+      <span class="badge bg-warning text-dark">{{ low_att_list | length }} Students</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Roll No</th>
+            <th>Department</th>
+            <th>Eligible Sessions</th>
+            <th>Attended</th>
+            <th>Attendance Rate</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in low_att_list %}
+          <tr>
+            <td class="fw-bold">{{ item.student.first_name }} {{ item.student.last_name }}</td>
+            <td><span class="badge bg-light text-dark border">{{ item.student.roll_number }}</span></td>
+            <td>{{ item.student.department }}</td>
+            <td>{{ item.stats.eligible_sessions }}</td>
+            <td>{{ item.stats.attended_sessions }}</td>
+            <td>
+              <span class="badge bg-danger-subtle text-danger fw-bold fs-6">{{ item.stats.percentage }}%</span>
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('students.detail', student_id=item.student.student_id) }}" class="btn btn-sm btn-outline-dark">
+                View Full Log
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-3 text-success">
+              <i class="bi bi-check-circle me-1"></i> Excellent! All active students currently satisfy the 75% attendance criterion.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Attendance Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('attendance.edit_record') }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Amend Attendance Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="record_id" id="edit_record_id">
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Student</label>
+            <input type="text" class="form-control" id="edit_student_name" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">New Status *</label>
+            <select name="status" id="edit_status" class="form-select" required>
+              <option value="present">Present</option>
+              <option value="late">Late</option>
+              <option value="absent">Absent</option>
+              <option value="excused">Excused (Medical / Official)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Reason for Amendment * (Required for Audit Log)</label>
+            <input type="text" name="reason" class="form-control" placeholder="e.g. Medical certificate verified by HOD" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Amendment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openEditModal(recordId, studentName, currentStatus) {
+  document.getElementById('edit_record_id').value = recordId;
+  document.getElementById('edit_student_name').value = studentName;
+  document.getElementById('edit_status').value = currentStatus;
+  const modal = new bootstrap.Modal(document.getElementById('editModal'));
+  modal.show();
+}
+</script>
+{% endblock %}

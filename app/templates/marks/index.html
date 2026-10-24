@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Marks & Academic Performance - Student Tracker System{% endblock %}
+{% block header_title %}Academic Assessments & Marks{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h5 class="fw-bold text-dark mb-1">Assessments & Results</h5>
+      <p class="text-muted small mb-0">Manage tests, mid-terms, quizzes, and track class academic performance</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reports.export_marks') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-arrow-down"></i> Export Marks CSV
+      </a>
+      <a href="{{ url_for('marks.add_assessment') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+        <i class="bi bi-plus-circle"></i> Create Assessment
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-3">
+      <form method="GET" action="{{ url_for('marks.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <select name="subject" class="form-select" onchange="this.form.submit()">
+            <option value="">All Subjects</option>
+            {% for s in subjects %}
+            <option value="{{ s.code }}" {% if selected_subject == s.code %}selected{% endif %}>{{ s.code }} - {{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select name="semester" class="form-select" onchange="this.form.submit()">
+            <option value="">All Semesters</option>
+            {% for sem in [1, 2, 3, 4, 5, 6, 7, 8] %}
+            <option value="{{ sem }}" {% if selected_sem == sem|string %}selected{% endif %}>Semester {{ sem }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          {% if selected_subject or selected_sem %}
+          <a href="{{ url_for('marks.index') }}" class="btn btn-outline-secondary w-100">Clear</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Assessments Grid -->
+  <div class="row g-4 mb-4">
+    {% for item in assessment_summaries %}
+    {% set a = item.assessment %}
+    {% set stats = item.analytics %}
+    <div class="col-lg-6 col-xl-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="badge bg-primary text-white mb-1">{{ a.subject_code }}</span>
+            <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 220px;" title="{{ a.name }}">{{ a.name }}</h6>
+            <small class="text-muted">Sem {{ a.semester }} &bull; Max Marks: <strong>{{ a.max_marks }}</strong></small>
+          </div>
+          <span class="badge bg-light text-dark border">{{ stats.count if stats else 0 }} Evaluated</span>
+        </div>
+        <div class="card-body">
+          <div class="row text-center g-2 mb-3">
+            <div class="col-4">
+              <div class="p-2 border rounded bg-light">
+                <div class="small text-muted">Class Avg</div>
+                <div class="fw-bold text-primary">{{ stats.average_pct if stats else 0 }}%</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 border rounded bg-light">
+                <div class="small text-muted">High</div>
+                <div class="fw-bold text-success">{{ stats.highest_marks if stats else 0 }}</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 border rounded bg-light">
+                <div class="small text-muted">Low</div>
+                <div class="fw-bold text-danger">{{ stats.lowest_marks if stats else 0 }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="small text-muted mb-3"><i class="bi bi-calendar3 me-1"></i>Exam Date: {{ a.assessment_date }}</div>
+          
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('marks.entry', assessment_id=a.assessment_id) }}" class="btn btn-sm btn-outline-primary flex-fill">
+              <i class="bi bi-pencil-square me-1"></i> Enter Marks
+            </a>
+            <a href="{{ url_for('marks.results', assessment_id=a.assessment_id) }}" class="btn btn-sm btn-light border flex-fill">
+              <i class="bi bi-graph-up me-1"></i> View Results
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 text-muted">
+      <i class="bi bi-award fs-1 d-block mb-2"></i>
+      No assessments recorded yet. Click "Create Assessment" to begin.
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- At-Risk Academic Watchlist -->
+  <div class="card shadow-sm border-danger">
+    <div class="card-header bg-danger-subtle text-danger-emphasis d-flex justify-content-between align-items-center">
+      <h6 class="m-0 fw-bold"><i class="bi bi-shield-exclamation text-danger me-2"></i>Students Requiring Academic Mentoring (Grade F / Score < 50%)</h6>
+      <span class="badge bg-danger text-white">{{ at_risk | length }} Students</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Roll No</th>
+            <th>Department</th>
+            <th>Assessments Evaluated</th>
+            <th>Overall Average</th>
+            <th>Academic Grade</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in at_risk %}
+          <tr>
+            <td class="fw-bold">{{ item.student.first_name }} {{ item.student.last_name }}</td>
+            <td><span class="badge bg-light text-dark border">{{ item.student.roll_number }}</span></td>
+            <td>{{ item.student.department }}</td>
+            <td>{{ item.summary.total_assessments }}</td>
+            <td class="fw-bold text-danger">{{ item.summary.overall_percentage }}%</td>
+            <td>
+              <span class="badge bg-danger">{{ item.summary.overall_grade }}</span>
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('students.detail', student_id=item.student.student_id) }}" class="btn btn-sm btn-outline-danger">
+                Academic Profile
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-3 text-success">
+              <i class="bi bi-check-circle me-1"></i> All active students are performing above the passing threshold.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

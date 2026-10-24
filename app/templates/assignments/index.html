@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Assignments Management - Student Tracker System{% endblock %}
+{% block header_title %}Assignments & Coursework{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h5 class="fw-bold text-dark mb-1">Coursework & Assignments</h5>
+      <p class="text-muted small mb-0">Track deadlines, student submissions, and evaluated coursework</p>
+    </div>
+    <a href="{{ url_for('assignments.add') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+      <i class="bi bi-journal-plus"></i> Create New Assignment
+    </a>
+  </div>
+
+  <div class="row g-4">
+    {% for a in assignments %}
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100 border {% if a.is_overdue %}border-danger-subtle{% endif %}">
+        <div class="card-header bg-white d-flex justify-content-between align-items-start py-3">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="badge bg-primary text-white">{{ a.subject_code }}</span>
+              <span class="badge bg-light text-dark border">Sem {{ a.semester }}</span>
+              {% if a.is_overdue %}
+              <span class="badge bg-danger-subtle text-danger"><i class="bi bi-alarm me-1"></i>Overdue Deadline</span>
+              {% else %}
+              <span class="badge bg-success-subtle text-success"><i class="bi bi-clock me-1"></i>Active</span>
+              {% endif %}
+            </div>
+            <h5 class="fw-bold text-dark mb-1">{{ a.title }}</h5>
+            <small class="text-muted">Created by {{ a.created_by }}</small>
+          </div>
+          <span class="badge bg-light text-dark border fs-6">{{ a.max_score }} Pts</span>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-4" style="min-height: 48px;">{{ a.description }}</p>
+
+          <div class="row g-2 text-center mb-4">
+            <div class="col-6">
+              <div class="p-2 border rounded bg-light">
+                <div class="small text-muted">Submitted</div>
+                <div class="fw-bold text-success">{{ a.submitted_count }} / {{ a.total_students }}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2 border rounded bg-light">
+                <div class="small text-muted">Pending</div>
+                <div class="fw-bold {% if a.is_overdue %}text-danger{% else %}text-warning{% endif %}">{{ a.pending_count }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+            <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Deadline: <strong>{{ a.deadline }}</strong></small>
+            <a href="{{ url_for('assignments.submissions', assignment_id=a.assignment_id) }}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-people me-1"></i> Submissions & Grading
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 text-muted">
+      <i class="bi bi-journal fs-1 d-block mb-2"></i>
+      No assignments posted yet. Click "Create New Assignment" to get started.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

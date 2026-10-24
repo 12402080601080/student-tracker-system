@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assessment - Student Tracker System{% endblock %}
+{% block header_title %}Create Assessment{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h5 class="fw-bold text-dark mb-1">New Academic Assessment</h5>
+          <p class="text-muted small mb-0">Configure test title, subject code, maximum allowable marks, and date</p>
+        </div>
+        <a href="{{ url_for('marks.index') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back to Assessments
+        </a>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <form method="POST">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Assessment ID *</label>
+                <input type="text" name="assessment_id" class="form-control" placeholder="e.g. ASS-CS301-T2" required>
+                <div class="form-text">Unique code for this evaluation event.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Assessment Name *</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Mid-Term Exam (Unit 3 & 4)" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Subject *</label>
+                <select name="subject_code" class="form-select" required>
+                  <option value="">Select Subject</option>
+                  {% for s in subjects %}
+                  <option value="{{ s.code }}">{{ s.code }} - {{ s.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Maximum Marks *</label>
+                <input type="number" step="0.5" name="max_marks" class="form-control" placeholder="e.g. 50.0" value="50.0" min="1" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Assessment Date</label>
+                <input type="date" name="assessment_date" class="form-control" value="2026-10-15" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Semester</label>
+                <select name="semester" class="form-select" required>
+                  {% for sem in [1, 2, 3, 4, 5, 6, 7, 8] %}
+                  <option value="{{ sem }}" {% if sem == 5 %}selected{% endif %}>Semester {{ sem }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Academic Year</label>
+                <input type="text" name="academic_year" class="form-control" value="2025-2026" required>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+              <a href="{{ url_for('marks.index') }}" class="btn btn-light border px-4">Cancel</a>
+              <button type="submit" class="btn btn-primary px-4 shadow-sm">Create Assessment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

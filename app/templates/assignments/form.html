@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assignment - Student Tracker System{% endblock %}
+{% block header_title %}Create Course Assignment{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h5 class="fw-bold text-dark mb-1">New Assignment Specification</h5>
+          <p class="text-muted small mb-0">Set task requirements, instructions, deadline, and total score</p>
+        </div>
+        <a href="{{ url_for('assignments.index') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back to Assignments
+        </a>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <form method="POST">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Assignment ID *</label>
+                <input type="text" name="assignment_id" class="form-control" placeholder="e.g. ASG-CS301-03" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Subject *</label>
+                <select name="subject_code" class="form-select" required>
+                  <option value="">Select Subject</option>
+                  {% for s in subjects %}
+                  <option value="{{ s.code }}">{{ s.code }} - {{ s.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-medium text-secondary">Assignment Title *</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. B+ Tree Implementation & Query Engine" required>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-medium text-secondary">Task Instructions & Description</label>
+                <textarea name="description" class="form-control" rows="4" placeholder="Detail deliverables, formatting guidelines, code requirements..."></textarea>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Semester</label>
+                <select name="semester" class="form-select" required>
+                  {% for s in [1, 2, 3, 4, 5, 6, 7, 8] %}
+                  <option value="{{ s }}" {% if s == 5 %}selected{% endif %}>Semester {{ s }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Submission Deadline *</label>
+                <input type="date" name="deadline" class="form-control" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Maximum Score</label>
+                <input type="number" name="max_score" class="form-control" value="100" min="1" required>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+              <a href="{{ url_for('assignments.index') }}" class="btn btn-light border px-4">Cancel</a>
+              <button type="submit" class="btn btn-primary px-4 shadow-sm">Post Assignment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

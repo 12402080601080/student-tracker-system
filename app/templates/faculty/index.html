@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Directory - Student Tracker System{% endblock %}
+{% block header_title %}Faculty Directory{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h5 class="fw-bold text-dark mb-1">Faculty & Teaching Staff</h5>
+      <p class="text-muted small mb-0">Manage professors, course coordinators, and departmental staff</p>
+    </div>
+    <a href="{{ url_for('faculty.add') }}" class="btn btn-primary d-flex align-items-center gap-2">
+      <i class="bi bi-person-plus-fill"></i> Add Faculty Member
+    </a>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-3">
+      <form method="GET" action="{{ url_for('faculty.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <select name="department" class="form-select" onchange="this.form.submit()">
+            <option value="">All Departments</option>
+            {% for d in departments %}
+            <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          {% if selected_dept %}
+          <a href="{{ url_for('faculty.index') }}" class="btn btn-outline-secondary w-100">Clear Filter</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Faculty ID</th>
+            <th>Name & Title</th>
+            <th>Department</th>
+            <th>Assigned Subjects</th>
+            <th>Contact</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in faculty_list %}
+          <tr>
+            <td class="fw-semibold text-primary">{{ f.faculty_id }}</td>
+            <td>
+              <div class="fw-bold text-dark">{{ f.name }}</div>
+              <div class="small text-muted">{{ f.designation or 'Faculty' }}</div>
+            </td>
+            <td>{{ f.department }}</td>
+            <td>
+              {% for sub in f.assigned_subjects %}
+              <span class="badge bg-primary-subtle text-primary border border-primary me-1">{{ sub }}</span>
+              {% else %}
+              <span class="small text-muted">None assigned</span>
+              {% endfor %}
+            </td>
+            <td>
+              <div class="small text-dark">{{ f.email }}</div>
+              <div class="small text-muted">{{ f.phone or '' }}</div>
+            </td>
+            <td>
+              <span class="badge {{ f.status | status_badge }}">{{ f.status }}</span>
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('faculty.edit', faculty_id=f.faculty_id) }}" class="btn btn-sm btn-light border" title="Edit Profile">
+                <i class="bi bi-pencil text-secondary"></i> Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">No faculty members found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Results - {{ analytics.assessment.name }}{% endblock %}
+{% block header_title %}Assessment Analytics & Results{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h5 class="fw-bold text-dark mb-1">{{ analytics.assessment.name }} ({{ analytics.assessment.assessment_id }})</h5>
+      <p class="text-muted small mb-0">Subject: <strong>{{ analytics.assessment.subject_code }}</strong> &bull; Max Marks: <strong>{{ analytics.assessment.max_marks }}</strong> &bull; Date: {{ analytics.assessment.assessment_date }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reports.export_marks', assessment_id=analytics.assessment.assessment_id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark-arrow-down me-1"></i> Export Results CSV
+      </a>
+      <a href="{{ url_for('marks.entry', assessment_id=analytics.assessment.assessment_id) }}" class="btn btn-primary shadow-sm">
+        <i class="bi bi-pencil-square me-1"></i> Edit Marks
+      </a>
+      <a href="{{ url_for('marks.index') }}" class="btn btn-light border">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </a>
+    </div>
+  </div>
+
+  <!-- Metric Statistics Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card stat-card shadow-sm h-100">
+        <div class="stat-icon icon-blue">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="stat-value">{{ analytics.count }}</div>
+        <div class="stat-label">Students Evaluated</div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card stat-card shadow-sm h-100">
+        <div class="stat-icon icon-purple">
+          <i class="bi bi-graph-up"></i>
+        </div>
+        <div class="stat-value">{{ analytics.average_pct }}%</div>
+        <div class="stat-label">Class Average Score ({{ analytics.average_marks }}/{{ analytics.assessment.max_marks }})</div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card stat-card shadow-sm h-100">
+        <div class="stat-icon icon-green">
+          <i class="bi bi-trophy-fill"></i>
+        </div>
+        <div class="stat-value">{{ analytics.highest_marks }}</div>
+        <div class="stat-label">Highest Score</div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card stat-card shadow-sm h-100">
+        <div class="stat-icon icon-amber">
+          <i class="bi bi-arrow-down-circle-fill"></i>
+        </div>
+        <div class="stat-value">{{ analytics.lowest_marks }}</div>
+        <div class="stat-label">Lowest Score</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Marks Table -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h6 class="m-0 fw-bold text-dark">Individual Student Performance Record</h6>
+      <span class="badge bg-light text-dark border">{{ analytics.student_results | length }} Records</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Marks Obtained</th>
+            <th>Percentage</th>
+            <th>Grade</th>
+            <th>Performance Status</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in analytics.student_results %}
+          <tr>
+            <td><span class="badge bg-light text-dark border">{{ r.roll_number }}</span></td>
+            <td>
+              <div class="fw-bold">{{ r.student_name }}</div>
+              <div class="small text-muted">{{ r.student_id }}</div>
+            </td>
+            <td class="fw-bold">{{ r.marks_obtained }} / {{ analytics.assessment.max_marks }}</td>
+            <td class="fw-semibold">{{ r.percentage }}%</td>
+            <td>
+              <span class="badge {{ r.grade | grade_badge }}">{{ r.grade }}</span>
+            </td>
+            <td>
+              {% if r.grade == 'F' %}
+              <span class="badge bg-danger-subtle text-danger">Needs Mentoring</span>
+              {% elif r.percentage >= 80 %}
+              <span class="badge bg-success-subtle text-success">Distinction</span>
+              {% else %}
+              <span class="badge bg-primary-subtle text-primary">Pass</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ r.remarks or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">No marks recorded yet for this assessment.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

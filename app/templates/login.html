@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Student Tracker System{% endblock %}
+
+{% block auth_content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-4 shadow-sm mb-3" style="width: 56px; height: 56px;">
+          <i class="bi bi-mortarboard-fill fs-2"></i>
+        </div>
+        <h2 class="fw-bold text-dark">Student Tracker</h2>
+        <p class="text-muted small">Academic Management & Performance Portal</p>
+      </div>
+
+      <!-- Flash Messages for Login -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">Sign in to your account</h5>
+          <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="mb-3">
+              <label for="username" class="form-label small fw-medium text-secondary">Username or Email</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" id="username" name="username" placeholder="admin or faculty" required autofocus>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label small fw-medium text-secondary">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock"></i></span>
+                <input type="password" class="form-control border-start-0 ps-0" id="password" name="password" placeholder="••••••••" required>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="remember" name="remember" checked>
+                <label class="form-check-label small text-muted" for="remember">Remember me</label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm">
+              <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+            </button>
+          </form>
+
+          <!-- Quick Demo Credentials Fill -->
+          <div class="mt-4 pt-3 border-top text-center">
+            <span class="small text-muted d-block mb-2">⚡ Quick Fill Demo Credentials:</span>
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillCreds('admin', 'Admin@123')">
+                <i class="bi bi-shield-check me-1"></i>Admin
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillCreds('faculty', 'Faculty@123')">
+                <i class="bi bi-person-badge me-1"></i>Faculty
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <small class="text-muted">B.Tech Mini Project &bull; Academic Year 2025-2026</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function fillCreds(u, p) {
+  document.getElementById('username').value = u;
+  document.getElementById('password').value = p;
+}
+</script>
+{% endblock %}

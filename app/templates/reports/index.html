@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Exports - Student Tracker System{% endblock %}
+{% block header_title %}Reports & Analytics Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="mb-4">
+    <h5 class="fw-bold text-dark mb-1">Academic Reports & Data Export</h5>
+    <p class="text-muted small mb-0">Generate downloadable CSV files, administrative records, and audit logs</p>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <!-- Card 1: Students Directory CSV -->
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-3 mb-3" style="width: 48px; height: 48px;">
+            <i class="bi bi-people-fill fs-4"></i>
+          </div>
+          <h5 class="fw-bold text-dark">Students Directory</h5>
+          <p class="text-muted small flex-grow-1">Export comprehensive student master records, contact details, enrollment dates, and status to CSV format.</p>
+          <a href="{{ url_for('reports.export_students') }}" class="btn btn-primary w-100">
+            <i class="bi bi-download me-2"></i>Download Students CSV
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Attendance Report CSV -->
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-3 mb-3" style="width: 48px; height: 48px;">
+            <i class="bi bi-calendar2-check-fill fs-4"></i>
+          </div>
+          <h5 class="fw-bold text-dark">Attendance Summary</h5>
+          <p class="text-muted small flex-grow-1">Export session metrics, attended vs eligible session counts, attendance percentages, and low-attendance warnings (<75%).</p>
+          <a href="{{ url_for('reports.export_attendance') }}" class="btn btn-success w-100">
+            <i class="bi bi-download me-2"></i>Download Attendance CSV
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Marks & Results CSV -->
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-inline-flex align-items-center justify-content-center bg-indigo-subtle text-indigo rounded-3 mb-3" style="width: 48px; height: 48px;">
+            <i class="bi bi-award-fill fs-4"></i>
+          </div>
+          <h5 class="fw-bold text-dark">Marks & Grade Sheet</h5>
+          <p class="text-muted small flex-grow-1">Export all assessment evaluations, max marks, obtained scores, calculated percentage, and letter grades (A+ through F).</p>
+          <a href="{{ url_for('reports.export_marks') }}" class="btn btn-dark w-100">
+            <i class="bi bi-download me-2"></i>Download Marks CSV
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Audit Trail in Reports Center -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+      <h6 class="m-0 fw-bold text-dark"><i class="bi bi-shield-check text-primary me-2"></i>Recent System Audit Activity</h6>
+      <a href="{{ url_for('reports.audit_logs') }}" class="btn btn-sm btn-outline-secondary">View Full Audit Log</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Affected Entity</th>
+            <th>Operation Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in audit_logs %}
+          <tr>
+            <td class="small text-muted">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '' }}</td>
+            <td class="fw-semibold">{{ log.user }}</td>
+            <td><span class="badge bg-light text-dark border">{{ log.action }}</span></td>
+            <td class="small">{{ log.affected_record }}</td>
+            <td class="small text-secondary">{{ log.details }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="text-center py-4 text-muted">No audit logs found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
